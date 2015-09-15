@@ -25,11 +25,11 @@ window.onload = function() {
         
 
         
-<<<<<<< HEAD
+
         ASSET_MANAGER.queueDownload('img/player.png')
         ASSET_MANAGER.downloadAll(function() {
             init();
-=======
+
         imagepaths = [
           ['player','img/player.png']
             
@@ -37,7 +37,7 @@ window.onload = function() {
         
         loadImages(imagepaths, function(imgs){
             setInterval(updateEveryting(imgs), 1000/framesPerSecond);
->>>>>>> 87bbdb615af2066e5ea273453671dab21c612cef
+
           })
 
 

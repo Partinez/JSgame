@@ -9,16 +9,27 @@ var playerY = 15;
 var map = [];
 var img = [];
 
+var ASSET_MANAGER = new AssetManager();
+
+
+
+
 
 window.onload = function() {
         canvas = document.getElementById('gameCanvas');
         canvasContext = canvas.getContext('2d');
 
-        var framesPerSecond = 30;
+        
         setUpEventListeners();
         map = createMap(50,38);
         
+
         
+<<<<<<< HEAD
+        ASSET_MANAGER.queueDownload('img/player.png')
+        ASSET_MANAGER.downloadAll(function() {
+            init();
+=======
         imagepaths = [
           ['player','img/player.png']
             
@@ -26,10 +37,16 @@ window.onload = function() {
         
         loadImages(imagepaths, function(imgs){
             setInterval(updateEveryting(imgs), 1000/framesPerSecond);
+>>>>>>> 87bbdb615af2066e5ea273453671dab21c612cef
           })
 
 
 
+}
+
+function init() {
+	var framesPerSecond = 30;
+	setInterval(updateEveryting, 1000/framesPerSecond);
 }
 
 function setUpEventListeners() {
@@ -47,14 +64,9 @@ function setUpEventListeners() {
 
 
 
-function drawPlayer(X,Y) {
-  var playerimg = new Image();
-  console.log(1);
-  playerimg.onload = function() {
-    canvasContext.drawImage(playerimg,X,Y);
-    console.log(2);
-    }
-  playerimg.scr = "img/player.png";
+function drawPlayer(x,y) {
+    var sprite = ASSET_MANAGER.getAsset('img/player.png');
+    canvasContext.drawImage(sprite, x - sprite.width/2, y - sprite.height/2);
 
   }
 
@@ -62,6 +74,8 @@ function handleKeyboard(evt) {
         
         key = evt.keyCode;
         playerSpeed = 15;
+        console.log(key);
+        console.log(playerX);
         
         if (key == 65) {
           playerX -= playerSpeed;
@@ -90,8 +104,9 @@ function handleMouseClick(evt) {
         }
 }
 
-function updateEveryting(imgs) {
+function updateEveryting() {
         //moveEverything();
+        console.log('i');
         drawEverything();
 }
 
@@ -180,15 +195,59 @@ function drawEverything() {
                 return;
         }
 
-        colorRect(0,0,2,canvas.height, 'white');
-        colorRect(0,canvas.width,2,canvas.height, 'white');
-        colorRect(0,0,canvas.width,2, 'white');
-        colorRect(0,canvas.height,canvas.width,2, 'white');
+        colorRect(0,0,2,canvas.height, 'black');
+        colorRect(0,canvas.width,2,canvas.height, 'black');
+        colorRect(0,0,canvas.width,2, 'black');
+        colorRect(0,canvas.height,canvas.width,2, 'black');
 
         //draw ball
         
-        //colorCircle(playerX, playerY, 6, 'green');
-
         drawPlayer(playerX,playerY);
 
+}
+
+
+function AssetManager() {
+    this.successCount = 0;
+    this.errorCount = 0;
+    this.downloadQueue = [];
+    this.cache = {};
+}
+
+
+AssetManager.prototype.queueDownload = function(path) {
+    this.downloadQueue.push(path);
+}
+
+AssetManager.prototype.downloadAll = function(downloadCallback) {
+	if (this.downloadQueue.length === 0) {
+      downloadCallback();
+  }
+  for (var i = 0; i < this.downloadQueue.length; i++) {
+    var path = this.downloadQueue[i];
+    var img = new Image();
+    var that = this;
+    img.addEventListener("load", function() {
+        that.successCount += 1;
+        if (that.isDone()) {
+        	downloadCallback();
+    }
+    }, false);
+    img.addEventListener("error", function() {
+        that.errorCount += 1;
+        if (that.isDone()) {
+        	downloadCallback();
+    }
+    }, false);
+    img.src = path;
+    this.cache[path] = img;
+  }
+}
+
+AssetManager.prototype.isDone = function() {
+    return (this.downloadQueue.length == this.successCount + this.errorCount);
+}
+
+AssetManager.prototype.getAsset = function(path) {
+    return this.cache[path];
 }

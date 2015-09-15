@@ -28,7 +28,7 @@ window.onload = function() {
 
         ASSET_MANAGER.queueDownload('img/player.png')
         ASSET_MANAGER.downloadAll(function() {
-            init();
+            init();}
 
         imagepaths = [
           ['player','img/player.png']

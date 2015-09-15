@@ -26,7 +26,7 @@ window.onload = function() {
         
         loadImages(imagepaths, function(imgs){
             setInterval(updateEveryting(imgs), 1000/framesPerSecond);
-          }
+          })
 
 
 

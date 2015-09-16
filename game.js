@@ -1,203 +1,205 @@
-var canvas;
-var canvasContext;
 
+
+
+// initial values
 var player1score = 0;
 var player2score = 0;
 var showingWinScreen = false;
-var playerX = 15;
-var playerY = 15;
 var map = [];
 var img = [];
+var mapXoffset = 48;
+var mapYoffset = 2;
+var UIXoffset = 2;
+var UIYoffset = 2;
 
-var ASSET_MANAGER = new AssetManager();
-
-
-
-
-
-window.onload = function() {
-        canvas = document.getElementById('gameCanvas');
-        canvasContext = canvas.getContext('2d');
-
-        
-        setUpEventListeners();
-        map = createMap(50,38);
-        
-
-        
-        ASSET_MANAGER.queueDownload('img/player.png')
-        ASSET_MANAGER.downloadAll(function() {
-            init();
-          })
+var map = [];
+var entities = [];
+var remainingDiamonds = 0;
 
 
+//constants
+const MAP_WIDTH = 50;
+const MAP_HEIGHT = 38;
+const GRID_SIZE = 15;
 
-}
+var examplemap = ""+
+"wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"+
+"w.........................wwwww..................w"+
+"w..................wwwwwwww...w..................w"+
+"w..................wd.H@....B.w..................w"+
+"w..................wwwwwwwwww.www................w"+
+"w..........................wd.w..................w"+
+"w..........................wwww..................w"+
+"w................................................w"+
+"w...........................www..................w"+
+"w...........................wBw..................w"+
+"w...........................www..................w"+
+"w................................................w"+
+"w................................................w"+
+"w........B...........................B...........w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w.........................H......................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"w................................................w"+
+"wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww";
 
-function init() {
-	var framesPerSecond = 30;
-	setInterval(updateEveryting, 1000/framesPerSecond);
-}
-
-function setUpEventListeners() {
-        canvas.addEventListener('mousemove',
-                function(evt) {
-                        var mousePos = calculateMousePos(evt);
-                        paddle1Y = mousePos.y;
-                })
-
-        canvas.addEventListener('mousedown', handleMouseClick);
-        
-        canvas.addEventListener('keydown',handleKeyboard);
-  
-}
 
 
 
-function drawPlayer(x,y) {
-    var sprite = ASSET_MANAGER.getAsset('img/player.png');
-    canvasContext.drawImage(sprite, x - sprite.width/2, y - sprite.height/2);
 
-  }
 
-function handleKeyboard(evt) {
-        
-        key = evt.keyCode;
-        playerSpeed = 15;
-        console.log(key);
-        console.log(playerX);
-        
-        if (key == 65) {
-          playerX -= playerSpeed;
-        }
-        if (key == 68) {
-          playerX += playerSpeed;
-        }
-        if (key == 87) {
-          playerY -= playerSpeed;
-        }
-        if (key == 83) {
-          playerY += playerSpeed;
-        }
-        
-  
-  
+
+
+
+//Sprite and icon correspondence
+var sprites = {
+	'@':'img/player.png',
+	'B':'img/block.png',
+	'H':'img/hole.png',
+	'h':'img/fhole.png',
+	'w':'img/wall.png',
+	'd':'img/diamond.png'
 }
 
 
-
-function handleMouseClick(evt) {
-        if(showingWinScreen) {
-                player1score = 0;
-                player2score = 0;
-                showingWinScreen = false;
-        }
+var properties = {
+	//name: [icon,walkable,pushable]
+	'@':['player',false,false],
+	'B':['block',false,true],
+	'H':['hole',false,false],
+	'h':['fhole',true,false],
+	'w':['wall',false,false],
+	'd':['diamond',true,false],
 }
 
-function updateEveryting() {
-        //moveEverything();
-        console.log('i');
-        drawEverything();
+//Classes
+
+function Element(icon, x, y) { //Elements in the map
+	this.name = properties[icon][0];
+	this.x = x;
+	this.y = y;
+	this.icon = icon;
+	this.walkable = properties[icon][1];	
+	this.pushable = properties[icon][2];
+	this.sprite = 'img/' + this.name + '.png';
+	entities.push(this);
+	if (!(map[x][y])) {
+		map[x][y] = this.icon;
+	} else {
+		console.log("Error while placing " + icon + " on " + x + " " + y + ", " + map[x][y] + " is already present.");
+	}
+} 
+
+Element.prototype.move = function(d) {
+	if (d == 'u') {
+		var newx = this.x;
+		var newy = this.y -1;
+	} else if (d == 'd') {
+		var newx = this.x;
+		var newy = this.y + 1;
+	} else if (d == 'l') {
+		var newx = this.x-1;
+		var newy = this.y;
+	} else if (d =='r') {
+		var newx = this.x+1;
+		var newy = this.y;
+	}
+	if (!this.collision(newx,newy,d)) {
+		var icon = this.icon;
+		var oldx = this.x;
+		var oldy = this.y;
+		map[this.x][this.y] = '';
+		map[newx][newy] = icon;
+		this.x = newx;
+		this.y = newy;
+		steppedon = getFromMap(oldx,oldy);
+		if (steppedon) {
+			steppedon.redraw();
+		}
+		return true;
+	}
+	
+	return false;
 }
 
-function loadImages(paths,whenLoaded){
-  var imgs=[];
-  paths.forEach(function(path){
-    var img = new Image;
-    img.onload = function(){
-      imgs.push(img);
-      if (imgs.length==paths.length) whenLoaded(imgs);
-    }
-    // Simulate slow loading of images, even when cached
-    setTimeout(function(){
-      img.src = 'http://phrogz.net/tmp/'+path;
-    },Math.random()*5000);
-  });
+Element.prototype.collision  = function(newx, newy,d) {
+
+	var isPlayer = (this.icon == '@'); //true if this is the player
+	if ((map[newx] === undefined) || (map[newx][newy] === undefined) ) {
+		return true;
+	}
+	if (isPlayer && map[newx][newy]) {
+		var collided = getFromMap(newx,newy);
+		if (collided.walkable){
+			if (collided.icon == 'd') {
+				remainingDiamonds -= 1;
+				collided.remove();
+				return false;
+			}
+			return false;
+		} else if (collided.pushable && collided.move(d)) {
+			return false;
+		} else {
+		return true;
+		}	
+	}
+
+
+
+	if (this.icon =='B' && map[newx][newy] == 'H') {
+		var hole = getFromMap(newx,newy);
+		//fill hole
+		hole.remove();
+		this.remove();
+		var fhole = new Element('h',newx,newy);
+		fhole.redraw();
+		return false;
+
+	}
+
+	if (map[newx][newy]) {
+		return true;
+	}
+	return false;
 }
 
-
-function createMap(sizeX, sizeY) {
-  var map = []
-  for (i = 0; i < sizeX; i++) {
-    var col = [];
-    for (j = 0; j < sizeY; j++) {
-      col.push('');
-      
-     }
-    map.push(col);
-    
-    }
-  return map;
+Element.prototype.redraw = function() {
+	//map[this.x][this.y] = this.icon;
+	draw(this.x,this.y,this.sprite);
 }
 
-
-
-function colorRect(leftX,topY,width,height,drawColor) {
-        canvasContext.fillStyle = drawColor;
-        canvasContext.fillRect(leftX,topY,width,height);
-}
-
-
-
-
-
-
-function moveEverything() {
-        if (showingWinScreen) {
-                return;
-        }
-
-}
-
-function colorCircle(centerX,centerY, radius, color) {
-        canvasContext.fillStyle = color;
-        canvasContext.beginPath();
-        canvasContext.arc(centerX,centerY, radius, 0, Math.PI*2, true);
-        canvasContext.fill();
-
-
-}
-
-function calculateMousePos(evt) {
-        var rect = canvas.getBoundingClientRect();
-        var root = document.documentElement;
-        var mouseX = evt.clientX - rect.left - root.scrollLeft;
-        var mouseY = evt.clientY - rect.top - root.scrollTop;
-        return {
-                x:mouseX,
-                y:mouseY
-        };
-}
-
-
-function draw(X,Y){}
-
-
-
-function drawEverything() {
-
-        colorRect(0,0,canvas.width, canvas.height, 'white');
-
-        if (showingWinScreen) {
-                canvasContext.fillStyle = "white";
-
-                canvasContext.fillText("Click to continue", 350, 500);
-                return;
-        }
-
-        colorRect(0,0,2,canvas.height, 'black');
-        colorRect(0,canvas.width,2,canvas.height, 'black');
-        colorRect(0,0,canvas.width,2, 'black');
-        colorRect(0,canvas.height,canvas.width,2, 'black');
-
-        //draw ball
-        
-        drawPlayer(playerX,playerY);
+Element.prototype.remove = function() {
+	map[this.x][this.y] = '';
+	var index = entities.indexOf(this);
+	entities.splice(index,1);
+	otheritem = getFromMap(this.x,this.y);
+	if (otheritem) {
+		otheritem.redraw();
+	}
 
 }
 
 
-function AssetManager() {
+function AssetManager() { //manages images
     this.successCount = 0;
     this.errorCount = 0;
     this.downloadQueue = [];
@@ -240,4 +242,228 @@ AssetManager.prototype.isDone = function() {
 
 AssetManager.prototype.getAsset = function(path) {
     return this.cache[path];
+}
+
+
+
+//Event listeners
+
+function setUpEventListeners() {
+        canvas.addEventListener('mousemove',
+                function(evt) {
+                        var mousePos = calculateMousePos(evt);
+                        paddle1Y = mousePos.y;
+                })
+
+        canvas.addEventListener('mousedown', handleMouseClick);
+        
+        canvas.addEventListener('keydown',handleKeyboard);
+  
+}
+
+
+
+
+function handleKeyboard(evt) {
+        
+        key = evt.keyCode;
+        
+        if (key == 65) { //left
+        	player.move('l');
+        }
+        if (key == 68) { // right
+        	player.move('r');
+        }
+        if (key == 87) { // up
+        	player.move('u');
+        }
+        if (key == 83) { //down
+        	player.move('d');
+        }
+        
+  
+  
+}
+
+
+
+function handleMouseClick(evt) {
+        if(showingWinScreen) {
+                player1score = 0;
+                player2score = 0;
+                showingWinScreen = false;
+        }
+}
+
+function calculateMousePos(evt) {
+        var rect = canvas.getBoundingClientRect();
+        var root = document.documentElement;
+        var mouseX = evt.clientX - rect.left - root.scrollLeft;
+        var mouseY = evt.clientY - rect.top - root.scrollTop;
+        return {
+                x:mouseX,
+                y:mouseY
+        };
+}
+
+
+
+
+//Create an empty map
+
+function createMap(sizeX, sizeY) {
+  var map = []
+  for (i = 0; i < sizeX; i++) {
+    var col = [];
+    for (j = 0; j < sizeY; j++) {
+      col.push('');
+      
+     }
+    map.push(col);
+    
+    }
+  return map;
+}
+
+
+
+
+function getFromMap(x,y) {
+	for (var i= 0; i < entities.length; i++) {
+		if (entities[i].x == x && entities[i].y == y) {
+			return entities[i];
+		}
+	}
+	return false;
+}
+
+function refreshMap() {
+	for (var i= 0; i < entities.length; i++) {
+		if (entities[i].walkable) {entities[i].redraw();}
+	
+	}
+	for (var i= 0; i < entities.length; i++) {
+		if (entities[i] != player && !(entities[i].walkable)) {entities[i].redraw();}
+	}
+	player.redraw();
+}
+
+function importMap(importmap,sizeX,sizeY) {
+  for (var i = 0; i < sizeY; i++) {
+    var col = [];
+    for (var j = 0; j < sizeX; j++) {
+    	if (importmap[i*sizeX+j] != '.') {
+    		if(importmap[i*sizeX+j] == 'd') {remainingDiamonds++}
+   		   col.push(importmap[i*sizeX+j]);
+   		   var entity = new Element(importmap[i*sizeX+j],j,i);
+   		   if (entity.icon == '@') {player = entity}
+ 		}
+ 		col.push('');
+      
+     }
+    map.push(col);
+    
+    }
+  return map;
+}
+
+
+//Drawing functions
+
+function draw(X,Y,sprite){
+	xcoor = X*GRID_SIZE+mapXoffset;
+	ycoor = Y*GRID_SIZE+mapYoffset;
+   	var sprite = ASSET_MANAGER.getAsset(sprite);
+    canvasContext.drawImage(sprite, xcoor, ycoor);
+
+  }
+
+
+
+
+function drawUI() {
+    colorRect(0,0,canvas.width, canvas.height, 'white');
+    colorRect(0,0,2,canvas.height, 'black');
+    colorRect(canvas.width-2,0,2,canvas.height, 'black');
+    colorRect(0,0,canvas.width,2, 'black');
+    colorRect(0,canvas.height-2,canvas.width,2, 'black');
+    //draw mapborder:
+    colorRect(mapXoffset-2,mapYoffset,2,MAP_HEIGHT*GRID_SIZE, 'black'); //Left
+    colorRect(mapXoffset-2,mapYoffset-2,MAP_WIDTH*GRID_SIZE,2, 'black'); //top
+    colorRect(mapXoffset-2,mapYoffset+MAP_HEIGHT*GRID_SIZE,MAP_WIDTH*GRID_SIZE+2,2, 'black'); //Down
+    colorRect(mapXoffset+MAP_WIDTH*GRID_SIZE,mapYoffset,2,MAP_HEIGHT*GRID_SIZE+2, 'black');   //Down
+    canvasContext.font= '20px sans-serif';
+    canvasContext.textAlign = true;
+ 	canvasContext.fillText(remainingDiamonds, UIXoffset+22-canvasContext.measureText(remainingDiamonds)['width']/2, UIYoffset+50);
+ 	var sprite = ASSET_MANAGER.getAsset('img/diamond.png');
+ 	canvasContext.drawImage(sprite, UIXoffset+12, UIYoffset+12,20,20);
+
+}
+
+
+function drawEverything() { //Draw UI then map
+
+        drawUI();
+        refreshMap();
+
+
+}
+
+function colorCircle(centerX,centerY, radius, color) {
+        canvasContext.fillStyle = color;
+        canvasContext.beginPath();
+        canvasContext.arc(centerX,centerY, radius, 0, Math.PI*2, true);
+        canvasContext.fill();
+
+
+}
+
+function colorRect(leftX,topY,width,height,drawColor) {
+        canvasContext.fillStyle = drawColor;
+        canvasContext.fillRect(leftX,topY,width,height);
+}
+
+
+
+function queueSpriteDownloads () {
+	for (var key in sprites) {
+		ASSET_MANAGER.queueDownload(sprites[key]);
+	}
+}
+
+
+// Main loop
+
+function updateEveryting() { 
+        //moveEverything();
+        drawEverything();
+}
+
+//Main function
+
+var ASSET_MANAGER = new AssetManager();
+var canvas;
+var canvasContext;
+
+
+
+window.onload = function() {
+        canvas = document.getElementById('gameCanvas');
+        canvasContext = canvas.getContext('2d');
+
+        
+        setUpEventListeners();
+        map = createMap(MAP_WIDTH,MAP_HEIGHT);
+        map = importMap(examplemap,MAP_WIDTH,MAP_HEIGHT);
+
+        queueSpriteDownloads();
+
+        var framesPerSecond = 30;
+	
+        ASSET_MANAGER.downloadAll(function() {
+            setInterval(updateEveryting, 1000/framesPerSecond);
+          })
+
+
+
 }

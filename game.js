@@ -12,9 +12,11 @@ var mapYoffset = 2;
 var UIXoffset = 2;
 var UIYoffset = 2;
 
+var timecount = 0;
 var map = [];
 var entities = [];
 var remainingDiamonds = 0;
+
 
 
 //constants
@@ -24,19 +26,19 @@ const GRID_SIZE = 15;
 
 var examplemap = ""+
 "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"+
-"w.........................wwwww..................w"+
-"w..................wwwwwwww...w..................w"+
-"w..................wd.H@....B.w..................w"+
-"w..................wwwwwwwwww.www................w"+
-"w..........................wd.w..................w"+
-"w..........................wwww..................w"+
-"w................................................w"+
-"w...........................www..................w"+
+"w............wwwwwwwww....w...w..................w"+
+"w....................wwwwww...w..................w"+
+"w.........e.........d.H@....B.w..................w"+
+"w............wwwwwwwwwwwwwwww.www................w"+
+"wwwww.wwwwwwww.............wd.w..................w"+
+"w...w.w....................wwww..................w"+
+"w...wdw..........................................w"+
+"w...www.....................www..................w"+
 "w...........................wBw..................w"+
 "w...........................www..................w"+
 "w................................................w"+
 "w................................................w"+
-"w........B...........................B...........w"+
+"w................................................w"+
 "w................................................w"+
 "w................................................w"+
 "w................................................w"+
@@ -63,6 +65,45 @@ var examplemap = ""+
 "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww";
 
 
+var emptymap = ""+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+"..............................@..................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+".................................................."+
+"..................................................";
 
 
 
@@ -77,18 +118,20 @@ var sprites = {
 	'H':'img/hole.png',
 	'h':'img/fhole.png',
 	'w':'img/wall.png',
-	'd':'img/diamond.png'
+	'd':'img/diamond.png',
+	'e':'img/enemy.png'
 }
 
 
 var properties = {
-	//name: [icon,walkable,pushable]
-	'@':['player',false,false],
-	'B':['block',false,true],
-	'H':['hole',false,false],
-	'h':['fhole',true,false],
-	'w':['wall',false,false],
-	'd':['diamond',true,false],
+	//name: [icon,walkable,pushable,enemy]
+	'@':['player',false,false,false],
+	'B':['block',false,true,false],
+	'H':['hole',false,false,false],
+	'h':['fhole',true,false,false],
+	'w':['wall',false,false,false],
+	'd':['diamond',true,false,false],
+	'e':['enemy',false,false,true]
 }
 
 //Classes
@@ -101,6 +144,8 @@ function Element(icon, x, y) { //Elements in the map
 	this.walkable = properties[icon][1];	
 	this.pushable = properties[icon][2];
 	this.sprite = 'img/' + this.name + '.png';
+	this.enemy = properties[icon][3];
+	if (this.icon == '@') {this.alive = true;}
 	entities.push(this);
 	if (!(map[x][y])) {
 		map[x][y] = this.icon;
@@ -123,7 +168,7 @@ Element.prototype.move = function(d) {
 		var newx = this.x+1;
 		var newy = this.y;
 	}
-	if (!this.collision(newx,newy,d)) {
+	if (!this.collision(newx,newy,d)) { //If there is no collision, move
 		var icon = this.icon;
 		var oldx = this.x;
 		var oldy = this.y;
@@ -134,6 +179,17 @@ Element.prototype.move = function(d) {
 		steppedon = getFromMap(oldx,oldy);
 		if (steppedon) {
 			steppedon.redraw();
+		}
+		if (this.icon == '@' || this.enemy) { //Check for enemies near the player if any of them moves
+			for (var i = player.x-1;i<= player.x+1;i++) {
+				for (var j = player.y-1;j<= player.y+1;j++) {
+					var entity = getFromMap(i,j);
+					if (entity.enemy) {
+						console.log('dead');
+						player.alive = false;
+					}
+				}
+			}
 		}
 		return true;
 	}
@@ -267,20 +323,22 @@ function setUpEventListeners() {
 function handleKeyboard(evt) {
         
         key = evt.keyCode;
-        
-        if (key == 65) { //left
-        	player.move('l');
+	        if (player.alive) {
+	        
+	        if (key == 65) { //left
+	        	if (player.move('l')) {mirrorMove('r');}
+	        	
+	        }
+	        if (key == 68) { // right
+	        	if (player.move('r')){mirrorMove('l');}
+	        }
+	        if (key == 87) { // up
+	        	if (player.move('u')){mirrorMove('d');}
+	        }
+	        if (key == 83) { //down
+	        	if (player.move('d')){mirrorMove('u');}
+	        }
         }
-        if (key == 68) { // right
-        	player.move('r');
-        }
-        if (key == 87) { // up
-        	player.move('u');
-        }
-        if (key == 83) { //down
-        	player.move('d');
-        }
-        
   
   
 }
@@ -345,7 +403,9 @@ function refreshMap() {
 	for (var i= 0; i < entities.length; i++) {
 		if (entities[i] != player && !(entities[i].walkable)) {entities[i].redraw();}
 	}
-	player.redraw();
+	if (player.alive) {
+		player.redraw();
+		}
 }
 
 function importMap(importmap,sizeX,sizeY) {
@@ -374,9 +434,18 @@ function draw(X,Y,sprite){
 	xcoor = X*GRID_SIZE+mapXoffset;
 	ycoor = Y*GRID_SIZE+mapYoffset;
    	var sprite = ASSET_MANAGER.getAsset(sprite);
-    canvasContext.drawImage(sprite, xcoor, ycoor);
+   	if (sprite.width > 15) {
+   		if (timecount > 15) {
+   			canvasContext.drawImage(sprite,0,0,15,15,xcoor, ycoor,15,15);
+   		} else {
+   			canvasContext.drawImage(sprite,15,0,15,15,xcoor, ycoor,15,15);
+   		}
 
-  }
+
+   	} else {
+    	canvasContext.drawImage(sprite,xcoor, ycoor);
+	}
+}
 
 
 
@@ -435,9 +504,27 @@ function queueSpriteDownloads () {
 // Main loop
 
 function updateEveryting() { 
-        //moveEverything();
+        timecount++;
+		if (timecount >= 30) {
+			moveEverything();
+			timecount = 0;
+		};
         drawEverything();
 }
+
+function moveEverything() {
+
+}
+
+function mirrorMove(d) {
+	for (var i = 0;i< entities.length; i++) {
+		if (entities[i].icon == 'e') {
+			entities[i].move(d);
+		}
+	}
+}
+
+
 
 //Main function
 

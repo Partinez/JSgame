@@ -33,16 +33,16 @@ var examplemap = ""+
 "wwwww.wwwwwwww.............wd.w..................w"+
 "w...w.w....................wwww..................w"+
 "w...wdw..........................................w"+
-"w...www.....................www..................w"+
-"w...........................wBw..................w"+
+"w...wnw.....................www..................w"+
+"w...wnw.....................wBw..................w"+
 "w...........................www..................w"+
 "w................................................w"+
 "w................................................w"+
 "w................................................w"+
+"w.....d..........................................w"+
+"w.............................................R..w"+
 "w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
+"w..................B.R.B...B............B........w"+
 "w................................................w"+
 "w................................................w"+
 "w................................................w"+
@@ -53,7 +53,7 @@ var examplemap = ""+
 "w................................................w"+
 "w................................................w"+
 "w................................................w"+
-"w................................................w"+
+"w...................................s............w"+
 "w................................................w"+
 "w................................................w"+
 "w................................................w"+
@@ -112,26 +112,22 @@ var emptymap = ""+
 
 
 //Sprite and icon correspondence
-var sprites = {
-	'@':'img/player.png',
-	'B':'img/block.png',
-	'H':'img/hole.png',
-	'h':'img/fhole.png',
-	'w':'img/wall.png',
-	'd':'img/diamond.png',
-	'e':'img/enemy.png'
-}
-
 
 var properties = {
-	//name: [icon,walkable,pushable,enemy]
-	'@':['player',false,false,false],
-	'B':['block',false,true,false],
-	'H':['hole',false,false,false],
-	'h':['fhole',true,false,false],
-	'w':['wall',false,false,false],
-	'd':['diamond',true,false,false],
-	'e':['enemy',false,false,true]
+	//icon: [name,walkable,pushable,enemy, eatable]
+	'@':['player',false,false,false,false],
+	'B':['block',false,true,false,false],
+	'H':['hole',false,false,false,false],
+	'h':['fhole',true,false,false,false],
+	'w':['wall',false,false,false,false],
+	'd':['diamond',true,false,false,false],
+	'e':['enemy',false,false,true,false],
+	's':['spinner',false,false,true,false],
+	'n':['sponge',true,false,false,true],
+	'R':['arrow-right',false,true,false,false],
+	'E':['arrow-left',false,true,false,false],
+	'W':['arrow-down',false,true,false,false],
+	'Q':['arrow-up',false,true,false,false],
 }
 
 //Classes
@@ -145,8 +141,9 @@ function Element(icon, x, y) { //Elements in the map
 	this.pushable = properties[icon][2];
 	this.sprite = 'img/' + this.name + '.png';
 	this.enemy = properties[icon][3];
+	this.eatable = properties[icon][4];
 	if (this.icon == '@') {this.alive = true;}
-	entities.push(this);
+	entities.unshift(this);
 	if (!(map[x][y])) {
 		map[x][y] = this.icon;
 	} else {
@@ -210,6 +207,9 @@ Element.prototype.collision  = function(newx, newy,d) {
 				remainingDiamonds -= 1;
 				collided.remove();
 				return false;
+			} else if (collided.eatable) {
+				collided.remove();
+				return false;
 			}
 			return false;
 		} else if (collided.pushable && collided.move(d)) {
@@ -217,6 +217,16 @@ Element.prototype.collision  = function(newx, newy,d) {
 		} else {
 		return true;
 		}	
+
+	}
+	if ("QWER".indexOf(this.icon) > -1 && map[newx][newy]) {
+		var collided = getFromMap(newx,newy);
+		if (collided.pushable && collided.move(d)) {
+			this.reverseArrow();
+			return true;
+		}
+		this.reverseArrow();
+		return true;
 	}
 
 
@@ -247,11 +257,29 @@ Element.prototype.remove = function() {
 	map[this.x][this.y] = '';
 	var index = entities.indexOf(this);
 	entities.splice(index,1);
-	otheritem = getFromMap(this.x,this.y);
+	var otheritem = getFromMap(this.x,this.y);
 	if (otheritem) {
 		otheritem.redraw();
 	}
 
+}
+
+Element.prototype.reverseArrow = function() {
+	var reverseKey = {
+		'R':'E',
+		'E':'R',
+		'W':'Q',
+		'Q':'W'
+	}
+
+	var x = this.x;
+	var y = this.y;
+	var icon = this.icon;
+
+	this.remove();
+
+	var newarrow = new Element(reverseKey[icon],x,y);
+		
 }
 
 
@@ -434,14 +462,27 @@ function draw(X,Y,sprite){
 	xcoor = X*GRID_SIZE+mapXoffset;
 	ycoor = Y*GRID_SIZE+mapYoffset;
    	var sprite = ASSET_MANAGER.getAsset(sprite);
-   	if (sprite.width > 15) {
-   		if (timecount > 15) {
-   			canvasContext.drawImage(sprite,0,0,15,15,xcoor, ycoor,15,15);
-   		} else {
+   	if (sprite.width == 30) {
+   		if (timecount > 45) {
    			canvasContext.drawImage(sprite,15,0,15,15,xcoor, ycoor,15,15);
+   		} else if (timecount > 30) {
+   			canvasContext.drawImage(sprite,0,0,15,15,xcoor, ycoor,15,15);
+   		} else if (timecount > 15) {
+   			canvasContext.drawImage(sprite,15,0,15,15,xcoor, ycoor,15,15);
+   		} else {
+   			canvasContext.drawImage(sprite,0,0,15,15,xcoor, ycoor,15,15);
    		}
 
-
+   	} else if (sprite.width == 60) {
+   		if (timecount > 45) {
+   			canvasContext.drawImage(sprite,45,0,15,15,xcoor, ycoor,15,15);
+   		} else if (timecount > 30) {
+   			canvasContext.drawImage(sprite,30,0,15,15,xcoor, ycoor,15,15);
+   		} else if (timecount > 15) {
+   			canvasContext.drawImage(sprite,15,0,15,15,xcoor, ycoor,15,15);
+   		} else {
+   			canvasContext.drawImage(sprite,0,0,15,15,xcoor, ycoor,15,15);
+   		}
    	} else {
     	canvasContext.drawImage(sprite,xcoor, ycoor);
 	}
@@ -495,8 +536,8 @@ function colorRect(leftX,topY,width,height,drawColor) {
 
 
 function queueSpriteDownloads () {
-	for (var key in sprites) {
-		ASSET_MANAGER.queueDownload(sprites[key]);
+	for (var key in properties) {
+		ASSET_MANAGER.queueDownload('img/' + properties[key][0] + '.png');
 	}
 }
 
@@ -505,15 +546,30 @@ function queueSpriteDownloads () {
 
 function updateEveryting() { 
         timecount++;
-		if (timecount >= 30) {
+		if (timecount % 30 == 0) {
 			moveEverything();
-			timecount = 0;
+			if(timecount == 60){
+				timecount = 0;
+			}
 		};
         drawEverything();
 }
 
 function moveEverything() {
-
+	for (var i = 0; i<entities.length;i++) {
+		var entity = entities[i];
+		if ("QWER".indexOf(entity.icon) > -1) { //arrowmove
+			if (entity.icon == 'Q') {
+				entity.move('u');
+			} else if (entity.icon == 'W') {
+				entity.move('d');
+			} else if (entity.icon == 'E') {
+				entity.move('l');
+			} else if (entity.icon == 'R') {
+				entity.move('r');
+			}
+		}
+	}
 }
 
 function mirrorMove(d) {

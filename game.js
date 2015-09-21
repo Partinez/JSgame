@@ -142,6 +142,7 @@ function Element(icon, x, y) { //Elements in the map
 	this.sprite = 'img/' + this.name + '.png';
 	this.enemy = properties[icon][3];
 	this.eatable = properties[icon][4];
+	this.memory = '';
 	if (this.icon == '@') {this.alive = true;}
 	entities.unshift(this);
 	if (!(map[x][y])) {
@@ -558,6 +559,22 @@ function updateEveryting() {
 function moveEverything() {
 	for (var i = 0; i<entities.length;i++) {
 		var entity = entities[i];
+		if (entity.icon== 's') {  //spinner move
+			var directions = ['u','l','d','r'];
+			console.log(entity.memory);
+			if (entity.memory  && entity.memory < 5) {
+
+				if (entity.memory == 4) {
+					//entity.memory = 0;
+				} else { entity.move(directions[entity.memory]);}
+				entity.memory += 1;
+			} else {
+				var rand = Math.floor(Math.random() * directions.length);
+				entity.memory = rand;
+				entity.move(directions[rand]);
+			}
+		}
+
 		if ("QWER".indexOf(entity.icon) > -1) { //arrowmove
 			if (entity.icon == 'Q') {
 				entity.move('u');

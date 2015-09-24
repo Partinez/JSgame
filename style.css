@@ -15,20 +15,11 @@ p {
   margin-top: 0px;
 }
 
-.left {
+.instructions-individual {
   float: left;
   width:33%;
 }
 
-.middle {
-  float: left;
-  width:33%;
-}
-
-.right {
-  float: left;
-  width:33%;
-}
 
 #canvasdiv {
   border-radius: 5px;

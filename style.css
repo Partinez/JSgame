@@ -1,0 +1,49 @@
+body {
+  font-family:"Lato",Arial,sans-serif;
+  text-align: center;
+  color: #7C8D87;
+  line-height: 1;
+}
+
+h1 {
+  font-size: 2em;
+}
+
+p {
+  font-family:"Lato",Arial,sans-serif;
+  line-height: 1;
+  margin-top: 0px;
+}
+
+.left {
+  float: left;
+  width:33%;
+}
+
+.middle {
+  float: left;
+  width:33%;
+}
+
+.right {
+  float: left;
+  width:33%;
+}
+
+#canvasdiv {
+  border-radius: 5px;
+  padding:0px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 800px;
+  height: 600px;
+  background: #fff;
+  overflow: hidden;
+}
+
+
+.instructions {
+  width: 60%;
+  margin-left: auto;
+  margin-right: auto;
+}

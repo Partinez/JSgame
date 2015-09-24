@@ -1,18 +1,25 @@
 <!DOCTYPE html>
-
 <html>
-
 <head>
+<link rel="stylesheet" href="style.css">
 <script src="game.js" type="text/javascript"></script>
+<link href="https://fonts.googleapis.com/css?family=Lato:400,300" rel="stylesheet" type="text/css">
 </head>
 <body>
+<h1>Kye JS clone</h1>
+<p>Click the game to start</p>
+<div class="instructions">
+    <p class="instructions-individual">Move with WASD</p>
+    <p class="instructions-individual">Try to get all the diamonds</p>
+    <p class="instructions-individual">Avoid the bad guys</p>
+</div>
+<div id="canvasdiv">
+  <canvas id="gameCanvas" width="800" height="600" tabindex="0"></canvas>
+</div>
 
-<canvas id="gameCanvas" width="800" height="600" tabindex="1"></canvas>
 
 
-
-
-</body> 
+</body>
 
 
 </html>

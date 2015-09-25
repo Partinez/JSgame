@@ -289,10 +289,11 @@ function handleKeyboard(evt) {
 	        if (key == 83) { //down
 	        	if (player.move('d')){mirrorMove('u');}
 	        }
-					if (key == 82) { //r
-						resetLevel()
-					}
-        }
+				}
+				if (key == 82) { //r
+					resetLevel()
+				}
+
 
 
 }
@@ -339,6 +340,7 @@ function createMap(sizeX, sizeY) {
 function resetLevel() {
 	remainingDiamonds = 0;
 	entities = [];
+	player.alive = true;
 	map = createMap(MAP_WIDTH,MAP_HEIGHT);
 	map = importMap(currentLevel,MAP_WIDTH,MAP_HEIGHT);
 }

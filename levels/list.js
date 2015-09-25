@@ -2,8 +2,8 @@ Levels = {
   level1:
   "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"+
   "w.......B...wwwwwwwwwwwwwwwwwww..................w"+
-  "wB......B............wwwwww...w..................w"+
-  "wsB.....B...........d.H.....B.w..................w"+
+  "w.....s.B............wwwwww...w..................w"+
+  "w.......B...........d.H.....B.w..................w"+
   "wwwwwnwwwwwwwwwwwwwwwwwww.www.www................w"+
   "wwwww.wwwwwwww.....w....B..wd.w..................w"+
   "w...w.w............w.w.w.wBwwww..................w"+

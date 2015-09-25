@@ -4,7 +4,7 @@
 // initial values
 var player1score = 0;
 var player2score = 0;
-var showingWinScreen = false;
+var showingStartScreen = true;
 var map = [];
 var img = [];
 var mapXoffset = 48;
@@ -16,6 +16,7 @@ var timecount = 0;
 var map = [];
 var entities = [];
 var remainingDiamonds = 0;
+var currentLevel = 'level1';
 
 
 
@@ -24,92 +25,13 @@ const MAP_WIDTH = 50;
 const MAP_HEIGHT = 38;
 const GRID_SIZE = 15;
 
-var examplemap = ""+
-"wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"+
-"w............wwwwwwwww....w...w..................w"+
-"w....................wwwwww...w..................w"+
-"w.........e.........d.H@....B.w..................w"+
-"w............wwwwwwwwwwwwwwww.www................w"+
-"wwwww.wwwwwwww.............wd.w..................w"+
-"w...w.w....................wwww..................w"+
-"w...wdw..........................................w"+
-"w...wnw.....................www..................w"+
-"w...wnw.....................wBw..................w"+
-"w...........................www..................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w.....d..........................................w"+
-"w.............................................R..w"+
-"w................................................w"+
-"w..................B.R.B...B............B........w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w.........................H......................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w...................................s............w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"w................................................w"+
-"wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww";
 
-
-var emptymap = ""+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-"..............................@..................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-".................................................."+
-"..................................................";
-
-
-
-
-
-
+var startMessages = [
+	{ message: "Kye clone in JS ",
+	title:true},
+	{ message: "Move with WASD, avoid the bad guys, get the diamonds"},
+	{ message: "Click to start"}
+]
 
 //Sprite and icon correspondence
 
@@ -121,8 +43,8 @@ var properties = {
 	'h':['fhole',true,false,false,false],
 	'w':['wall',false,false,false,false],
 	'd':['diamond',true,false,false,false],
-	'e':['enemy',false,false,true,false],
-	's':['spinner',false,false,true,false],
+	'e':['enemy',false,true,true,false],
+	's':['spinner',false,true,true,false],
 	'n':['sponge',true,false,false,true],
 	'R':['arrow-right',false,true,false,false],
 	'E':['arrow-left',false,true,false,false],
@@ -137,7 +59,7 @@ function Element(icon, x, y) { //Elements in the map
 	this.x = x;
 	this.y = y;
 	this.icon = icon;
-	this.walkable = properties[icon][1];	
+	this.walkable = properties[icon][1];
 	this.pushable = properties[icon][2];
 	this.sprite = 'img/' + this.name + '.png';
 	this.enemy = properties[icon][3];
@@ -150,7 +72,7 @@ function Element(icon, x, y) { //Elements in the map
 	} else {
 		console.log("Error while placing " + icon + " on " + x + " " + y + ", " + map[x][y] + " is already present.");
 	}
-} 
+}
 
 Element.prototype.move = function(d) {
 	if (d == 'u') {
@@ -191,7 +113,7 @@ Element.prototype.move = function(d) {
 		}
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -217,7 +139,7 @@ Element.prototype.collision  = function(newx, newy,d) {
 			return false;
 		} else {
 		return true;
-		}	
+		}
 
 	}
 	if ("QWER".indexOf(this.icon) > -1 && map[newx][newy]) {
@@ -280,7 +202,7 @@ Element.prototype.reverseArrow = function() {
 	this.remove();
 
 	var newarrow = new Element(reverseKey[icon],x,y);
-		
+
 }
 
 
@@ -341,22 +263,22 @@ function setUpEventListeners() {
                 })
 
         canvas.addEventListener('mousedown', handleMouseClick);
-        
+
         canvas.addEventListener('keydown',handleKeyboard);
-  
+
 }
 
 
 
 
 function handleKeyboard(evt) {
-        
+
         key = evt.keyCode;
 	        if (player.alive) {
-	        
+
 	        if (key == 65) { //left
 	        	if (player.move('l')) {mirrorMove('r');}
-	        	
+
 	        }
 	        if (key == 68) { // right
 	        	if (player.move('r')){mirrorMove('l');}
@@ -367,18 +289,19 @@ function handleKeyboard(evt) {
 	        if (key == 83) { //down
 	        	if (player.move('d')){mirrorMove('u');}
 	        }
+					if (key == 82) { //r
+						resetLevel()
+					}
         }
-  
-  
+
+
 }
 
 
 
 function handleMouseClick(evt) {
-        if(showingWinScreen) {
-                player1score = 0;
-                player2score = 0;
-                showingWinScreen = false;
+        if(showingStartScreen) {
+                showingStartScreen = false;
         }
 }
 
@@ -404,16 +327,21 @@ function createMap(sizeX, sizeY) {
     var col = [];
     for (j = 0; j < sizeY; j++) {
       col.push('');
-      
+
      }
     map.push(col);
-    
+
     }
   return map;
 }
 
 
-
+function resetLevel() {
+	remainingDiamonds = 0;
+	entities = [];
+	map = createMap(MAP_WIDTH,MAP_HEIGHT);
+	map = importMap(currentLevel,MAP_WIDTH,MAP_HEIGHT);
+}
 
 function getFromMap(x,y) {
 	for (var i= 0; i < entities.length; i++) {
@@ -427,7 +355,7 @@ function getFromMap(x,y) {
 function refreshMap() {
 	for (var i= 0; i < entities.length; i++) {
 		if (entities[i].walkable) {entities[i].redraw();}
-	
+
 	}
 	for (var i= 0; i < entities.length; i++) {
 		if (entities[i] != player && !(entities[i].walkable)) {entities[i].redraw();}
@@ -437,7 +365,8 @@ function refreshMap() {
 		}
 }
 
-function importMap(importmap,sizeX,sizeY) {
+function importMap(levelName,sizeX,sizeY) {
+	var importmap = Levels[levelName];
   for (var i = 0; i < sizeY; i++) {
     var col = [];
     for (var j = 0; j < sizeX; j++) {
@@ -448,10 +377,10 @@ function importMap(importmap,sizeX,sizeY) {
    		   if (entity.icon == '@') {player = entity}
  		}
  		col.push('');
-      
+
      }
     map.push(col);
-    
+
     }
   return map;
 }
@@ -490,32 +419,56 @@ function draw(X,Y,sprite){
 }
 
 
+function drawStartScreen() {
+	canvasContext.fillStyle = 'rgba(255,255,255,0.9)';
+	canvasContext.fillRect(0,0,canvas.width,canvas.height);
+	canvasContext.fillStyle = 'rgb(100,100,100)';
+	for (var i = 0; i<startMessages.length;i++) {
+		var message = startMessages[i].message;
+		var title = startMessages[i].title;
+		if (title) {
+			canvasContext.font = 'bold 30px Lato'
+		} else {
+			canvasContext.font = '20px Lato'
+		}
+		canvasContext.fillText(message,(canvas.width/2)-canvasContext.measureText(message)['width']/2,(canvas.height/2)-100 + 50*i);
+	}
 
+
+}
+
+function drawBG() {
+	colorRect(0,0,canvas.width, canvas.height, 'white');
+	colorRect(0,0,2,canvas.height, 'black');
+	colorRect(canvas.width-2,0,2,canvas.height, 'black');
+	colorRect(0,0,canvas.width,2, 'black');
+	colorRect(0,canvas.height-2,canvas.width,2, 'black');
+}
 
 function drawUI() {
-    colorRect(0,0,canvas.width, canvas.height, 'white');
-    colorRect(0,0,2,canvas.height, 'black');
-    colorRect(canvas.width-2,0,2,canvas.height, 'black');
-    colorRect(0,0,canvas.width,2, 'black');
-    colorRect(0,canvas.height-2,canvas.width,2, 'black');
+
     //draw mapborder:
     colorRect(mapXoffset-2,mapYoffset,2,MAP_HEIGHT*GRID_SIZE, 'black'); //Left
     colorRect(mapXoffset-2,mapYoffset-2,MAP_WIDTH*GRID_SIZE,2, 'black'); //top
     colorRect(mapXoffset-2,mapYoffset+MAP_HEIGHT*GRID_SIZE,MAP_WIDTH*GRID_SIZE+2,2, 'black'); //Down
     colorRect(mapXoffset+MAP_WIDTH*GRID_SIZE,mapYoffset,2,MAP_HEIGHT*GRID_SIZE+2, 'black');   //Down
-    canvasContext.font= '20px sans-serif';
+    canvasContext.font= '20px Lato';
     canvasContext.textAlign = true;
  	canvasContext.fillText(remainingDiamonds, UIXoffset+22-canvasContext.measureText(remainingDiamonds)['width']/2, UIYoffset+50);
  	var sprite = ASSET_MANAGER.getAsset('img/diamond.png');
  	canvasContext.drawImage(sprite, UIXoffset+12, UIYoffset+12,20,20);
+	canvasContext.fillStyle = "rgb(100,100,100)";
+	var message = "Press r to reset level";
+	canvasContext.fillText(message, (canvas.width/2)-canvasContext.measureText(message)['width']/2, canvas.height-7);
 
 }
 
 
 function drawEverything() { //Draw UI then map
 
-        drawUI();
+				drawBG();
         refreshMap();
+				drawUI();
 
 
 }
@@ -545,15 +498,17 @@ function queueSpriteDownloads () {
 
 // Main loop
 
-function updateEveryting() { 
-        timecount++;
-		if (timecount % 30 == 0) {
-			moveEverything();
-			if(timecount == 60){
-				timecount = 0;
-			}
-		};
-        drawEverything();
+function updateEveryting() {
+	if (!showingStartScreen) {
+	        timecount++;
+			if (timecount % 30 == 0) {
+				moveEverything();
+				if(timecount == 60){
+					timecount = 0;
+				}
+			};
+	        drawEverything();
+	}
 }
 
 function moveEverything() {
@@ -561,7 +516,6 @@ function moveEverything() {
 		var entity = entities[i];
 		if (entity.icon== 's') {  //spinner move
 			var directions = ['u','l','d','r'];
-			console.log(entity.memory);
 			if (entity.memory  && entity.memory < 5) {
 
 				if (entity.memory == 4) {
@@ -611,17 +565,20 @@ window.onload = function() {
         canvas = document.getElementById('gameCanvas');
         canvasContext = canvas.getContext('2d');
 
-        
+
         setUpEventListeners();
         map = createMap(MAP_WIDTH,MAP_HEIGHT);
-        map = importMap(examplemap,MAP_WIDTH,MAP_HEIGHT);
+        map = importMap(currentLevel,MAP_WIDTH,MAP_HEIGHT);
 
         queueSpriteDownloads();
 
         var framesPerSecond = 30;
-	
+
+
         ASSET_MANAGER.downloadAll(function() {
-            setInterval(updateEveryting, 1000/framesPerSecond);
+					drawEverything();
+					drawStartScreen();
+          setInterval(updateEveryting, 1000/framesPerSecond);
           })
 
 

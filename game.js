@@ -460,7 +460,7 @@ function drawUI() {
  	var sprite = ASSET_MANAGER.getAsset('img/diamond.png');
  	canvasContext.drawImage(sprite, UIXoffset+12, UIYoffset+12,20,20);
 	canvasContext.fillStyle = "rgb(100,100,100)";
-	var message = "Press WASD to move, R to reset level";
+	var message = "Press WASD to move, R to reset level.";
 	canvasContext.fillText(message, (canvas.width/2)-canvasContext.measureText(message)['width']/2, canvas.height-7);
 
 }
